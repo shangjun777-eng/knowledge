@@ -121,15 +121,14 @@ enableRobotsTXT = true
     default = "auto"
 
   [params.comments]
-    # 完成 giscus 配置（repo/repoID/categoryID）后改为 true
-    enabled = false
+    enabled = true
     provider = "giscus"
 
     [params.comments.giscus]
-      repo = "YOUR_GITHUB/knowledge-comments"
-      repoID = "R_xxxxxxxx"
+      repo = "shangjun777-eng/knowledge"
+      repoID = "R_kgDOViH-ig"
       category = "Announcements"
-      categoryID = "DIC_xxxxxxxx"
+      categoryID = "DIC_kwDOViH-is4DKWGx"
       mapping = "pathname"
       strict = 1
       reactionsEnabled = 1

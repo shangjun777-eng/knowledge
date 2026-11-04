@@ -4,6 +4,7 @@ description = "关于这个知识库和作者"
 date = 2026-11-04
 lastmod = 2026-11-04
 slug = "about"
+comments = false
 
 [menu.main]
   weight = -50

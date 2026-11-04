@@ -2,6 +2,7 @@
 title = "知识地图"
 description = "按主题浏览知识库中的文章与系列"
 slug = "knowledge-map"
+comments = false
 
 [menu.main]
   weight = -90

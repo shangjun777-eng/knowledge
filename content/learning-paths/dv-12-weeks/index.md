@@ -4,6 +4,7 @@ date = 2026-11-04
 lastmod = 2026-11-04
 slug = "dv-12-weeks"
 description = "从 SystemVerilog 基础到独立搭建 UVM 验证环境的 12 周学习路线"
+comments = false
 +++
 
 ## 目标
