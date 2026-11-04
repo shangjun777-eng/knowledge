@@ -2,6 +2,6 @@
 {{- $alt := .Get "alt" | default "" -}}
 {{- $caption := .Get "caption" | default "" -}}
 <figure class="pcie-figure">
-  <img src="{{ $src | relURL }}" alt="{{ $alt }}" loading="lazy">
+  <img src="{{ $src | relURL }}" alt="{{ $alt }}" loading="eager" decoding="async" style="max-width:100%;height:auto">
   {{ with $caption }}<figcaption>{{ . }}</figcaption>{{ end }}
 </figure>
