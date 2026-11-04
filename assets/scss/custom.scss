@@ -52,3 +52,22 @@ pre.mermaid {
   --pagefind-ui-border: var(--card-border-color);
   --pagefind-ui-tag: var(--card-background);
 }
+
+.pcie-figure {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.pcie-figure img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--card-border-color, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.pcie-figure figcaption {
+  margin-top: 0.5rem;
+  color: var(--body-text-color, #64748b);
+  font-size: 0.9rem;
+}

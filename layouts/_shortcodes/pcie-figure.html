@@ -1,0 +1,7 @@
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" | default "" -}}
+{{- $caption := .Get "caption" | default "" -}}
+<figure class="pcie-figure">
+  <img src="{{ $src | relURL }}" alt="{{ $alt }}" loading="lazy">
+  {{ with $caption }}<figcaption>{{ . }}</figcaption>{{ end }}
+</figure>

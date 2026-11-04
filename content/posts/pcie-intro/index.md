@@ -299,6 +299,8 @@ CplD 沿着原路（或等价路径）回到 RC。RC 用 **Requester ID + Tag** 
 - 设备返回了 UR/CA；
 - TLP 在链路层丢失且重传失败。
 
+{{< pcie-figure src="images/pcie/pcie-read-path.gif" alt="一次 MMIO 读：MRd 从 CPU 经 Root Complex、Switch 到 Endpoint，再返回 CplD" caption="动图：一次 MMIO 读的 8 个步骤" >}}
+
 ### 整个流程的时序
 
 ```mermaid
@@ -329,6 +331,8 @@ sequenceDiagram
 - **Posted**：发出去就结束，不等回复；性能好，但错误只能通过 AER/错误消息上报。
 - **Non-Posted**：必须等 Completion；读操作和配置操作都是 non-posted。
 - **Config Write 是 non-posted**，不是 posted，这一点很容易记错。
+
+{{< pcie-figure src="images/pcie/pcie-posted.gif" alt="Posted 与 Non-Posted 的对比：MWr 发完即结束，MRd 必须等 CplD" caption="动图：Posted 写不等回复，Non-Posted 读必须等 Completion" >}}
 
 <details>
 <summary>想深入一点：TLP 头里有什么</summary>
@@ -396,6 +400,8 @@ flowchart TB
 - 接收方向反过来：PHY 解码 → DLL 校验序列号/LCRC、回 ACK → TL 解析 TLP、匹配 Completion。
 
 > 这也解释了为什么调试时要“分层看”：PHY 出错看眼图/LTSSM，DLL 出错看 LCRC/重传，TL 出错看 TLP/Tag。
+
+{{< pcie-figure src="images/pcie/pcie-encapsulation.gif" alt="TLP 在 Transaction、Data Link、Physical 三层的封装过程" caption="动图：TLP → DLL 帧 → 物理层符号；接收方向反过来拆" >}}
 
 ### 一次读请求穿过三层
 
@@ -634,6 +640,8 @@ stateDiagram-v2
 - **L0**：正常工作状态。
 - **Recovery**：链路出错、速率切换或重新训练时进入，恢复后回到 L0。
 - **L0s / L1 / L2**：不同深度的低功耗状态；L2 需要辅助电源。
+
+{{< pcie-figure src="images/pcie/pcie-ltssm.gif" alt="LTSSM 从 Detect 训练到 L0 的过程" caption="动图：Detect → Polling → Configuration → L0；L0 之后才能传 TLP" >}}
 
 常见问题：
 
