@@ -1,0 +1,18 @@
+{{ if or .Params.math site.Params.article.math }}
+<link rel="stylesheet" href="{{ "vendor/katex/katex.min.css" | relURL }}">
+{{ end }}
+
+{{ if and .IsPage (not .Date.IsZero) }}
+{{- $ld := dict
+  "@context" "https://schema.org"
+  "@type" "TechArticle"
+  "headline" .Title
+  "description" (.Description | default (.Summary | plainify))
+  "datePublished" (.Date.Format "2006-01-02T15:04:05Z07:00")
+  "dateModified" (.Lastmod.Format "2006-01-02T15:04:05Z07:00")
+  "author" (dict "@type" "Person" "name" site.Params.author)
+  "publisher" (dict "@type" "Organization" "name" site.Title)
+  "mainEntityOfPage" .Permalink
+-}}
+<script type="application/ld+json">{{ $ld | jsonify | safeJS }}</script>
+{{ end }}

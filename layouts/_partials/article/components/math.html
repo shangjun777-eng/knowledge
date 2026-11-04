@@ -1,0 +1,23 @@
+<script defer src="{{ "vendor/katex/katex.min.js" | relURL }}"></script>
+<script defer src="{{ "vendor/katex/auto-render.min.js" | relURL }}"></script>
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+    if (!window.renderMathInElement) return;
+
+    const elementsToRender = [".main-article", ".widget--toc"];
+    elementsToRender.forEach(selector => {
+        const element = document.querySelector(selector);
+        if (!element) return;
+
+        renderMathInElement(element, {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ],
+            ignoredClasses: ["gist"]
+        });
+    });
+});
+</script>

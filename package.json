@@ -1,0 +1,14 @@
+{
+  "name": "knowledge",
+  "private": true,
+  "description": "数字芯片设计与验证知识库",
+  "scripts": {
+    "dev": "hugo server -D --disableFastRender",
+    "build": "hugo --gc --minify && node node_modules/pagefind/lib/runner/bin.cjs --site public --force-language zh",
+    "index": "node node_modules/pagefind/lib/runner/bin.cjs --site public --force-language zh",
+    "preview": "node node_modules/pagefind/lib/runner/bin.cjs --site public --serve"
+  },
+  "devDependencies": {
+    "pagefind": "1.6.0"
+  }
+}

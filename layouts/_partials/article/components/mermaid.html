@@ -1,0 +1,56 @@
+{{- if .Store.Get "hasMermaid" -}}
+{{- $cfg := site.Params.article.mermaid | default dict -}}
+<script src="{{ "vendor/mermaid/mermaid.min.js" | relURL }}" defer></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (!window.mermaid) return;
+
+    var cfg = {
+        lightTheme: {{ $cfg.lightTheme | default "default" | jsonify }},
+        darkTheme: {{ $cfg.darkTheme | default "dark" | jsonify }},
+        securityLevel: {{ $cfg.securityLevel | default "strict" | jsonify }},
+        look: {{ $cfg.look | default "classic" | jsonify }},
+        htmlLabels: {{ not (eq ($cfg.htmlLabels | default true) false) }}
+    };
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll("pre.mermaid"));
+    if (!nodes.length) return;
+
+    nodes.forEach(function (n) {
+        n.dataset.source = n.innerHTML;
+        n.style.visibility = "hidden";
+    });
+
+    function isDark() {
+        return document.documentElement.dataset.scheme === "dark";
+    }
+
+    function init() {
+        var dark = isDark();
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: dark ? cfg.darkTheme : cfg.lightTheme,
+            securityLevel: cfg.securityLevel,
+            look: cfg.look,
+            flowchart: { htmlLabels: cfg.htmlLabels, useMaxWidth: true }
+        });
+    }
+
+    async function render() {
+        init();
+        nodes.forEach(function (n) {
+            n.innerHTML = n.dataset.source;
+            n.removeAttribute("data-processed");
+            n.style.visibility = "hidden";
+        });
+        await mermaid.run({ nodes: nodes });
+        nodes.forEach(function (n) {
+            n.style.visibility = "visible";
+        });
+    }
+
+    render();
+    window.addEventListener("onColorSchemeChange", render);
+});
+</script>
+{{- end -}}

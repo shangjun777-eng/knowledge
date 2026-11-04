@@ -1,0 +1,23 @@
+{{- with .Params.series -}}
+  {{- $name := index . 0 -}}
+  {{- $title := $.Params.series_title | default $name -}}
+  {{- $pages := where site.RegularPages "Params.series" "intersect" (slice $name) -}}
+  {{- $pages = sort $pages "Params.series_order" "asc" -}}
+
+  <nav class="article-series" aria-label="系列文章">
+    <h3 class="article-series__title">
+      {{ with site.GetPage (printf "/series/%s" $name) }}
+        <a href="{{ .RelPermalink }}">{{ $title }}</a>
+      {{ else }}
+        {{ $title }}
+      {{ end }}
+    </h3>
+    <ol>
+      {{- range $pages }}
+        <li{{ if eq .Permalink $.Permalink }} class="is-current"{{ end }}>
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        </li>
+      {{- end }}
+    </ol>
+  </nav>
+{{- end -}}

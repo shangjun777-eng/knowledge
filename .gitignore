@@ -1,0 +1,18 @@
+# Hugo build output
+public/
+resources/_gen/
+.hugo_build.lock
+assets/jsconfig.json
+
+# Node dependencies
+node_modules/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local env
+.env
+.env.local

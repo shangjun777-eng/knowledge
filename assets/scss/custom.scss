@@ -1,0 +1,54 @@
+:root {
+  --sys-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Droid Sans", "Helvetica Neue", sans-serif;
+  --base-font-family: var(--sys-font-family);
+}
+
+.wavedrom-render {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0;
+}
+
+.wavedrom-render svg {
+  max-width: 100%;
+  height: auto;
+}
+
+pre.mermaid {
+  overflow-x: auto;
+  text-align: center;
+}
+
+.article-series {
+  margin-top: 2rem;
+  padding: 1rem 1.2rem;
+  border-left: 3px solid var(--accent-color);
+  background: var(--card-background);
+  border-radius: var(--card-border-radius);
+}
+
+.article-series__title {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.article-series ol {
+  margin-bottom: 0;
+}
+
+.article-series li.is-current {
+  font-weight: 700;
+}
+
+#search {
+  max-width: 760px;
+}
+
+.pagefind-ui {
+  --pagefind-ui-primary: var(--accent-color);
+  --pagefind-ui-text: var(--body-text-color);
+  --pagefind-ui-background: var(--card-background);
+  --pagefind-ui-border: var(--card-border-color);
+  --pagefind-ui-tag: var(--card-background);
+}

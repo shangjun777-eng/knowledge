@@ -1,0 +1,13 @@
+{{- $id := printf "wavedrom-%d" .Ordinal -}}
+{{- $srcID := printf "wavedrom-src-%d" .Ordinal -}}
+
+{{- if not (.Page.Store.Get "wavedromLoaded") -}}
+  {{- .Page.Store.Set "wavedromLoaded" true -}}
+  <script src="{{ "vendor/wavedrom/skins/default.js" | relURL }}"></script>
+  <script src="{{ "vendor/wavedrom/skins/dark.js" | relURL }}"></script>
+  <script src="{{ "vendor/wavedrom/wavedrom.min.js" | relURL }}"></script>
+  <script src="{{ "js/wavedrom-init.js" | relURL }}"></script>
+{{- end -}}
+
+<script type="application/json" id="{{ $srcID }}">{{ .Inner | safeJS }}</script>
+<div class="wavedrom-render" id="{{ $id }}" data-index="{{ .Ordinal }}" data-source="{{ $srcID }}"></div>

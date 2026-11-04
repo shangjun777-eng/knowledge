@@ -1,0 +1,158 @@
+baseURL = "https://knowledge.pages.dev/"
+title = "芯片知识库"
+theme = "hugo-theme-stack"
+
+defaultContentLanguage = "zh"
+defaultContentLanguageInSubdir = false
+locale = "zh-CN"
+hasCJKLanguage = true
+enableRobotsTXT = true
+
+[pagination]
+  pagerSize = 10
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+  series = "series"
+
+[permalinks]
+  posts = "/posts/:slug/"
+  page = "/:slug/"
+
+[related]
+  includeNewer = true
+  threshold = 60
+  toLower = false
+
+[[related.indices]]
+  name = "series"
+  weight = 200
+
+[[related.indices]]
+  name = "tags"
+  weight = 100
+
+[[related.indices]]
+  name = "categories"
+  weight = 50
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+
+  [markup.goldmark.extensions.passthrough]
+    enable = true
+    [markup.goldmark.extensions.passthrough.delimiters]
+      block = [['\[', '\]'], ['$$', '$$']]
+      inline = [['\(', '\)'], ['$', '$']]
+
+  [markup.highlight]
+    noClasses = false
+    codeFences = true
+    guessSyntax = false
+    lineNos = false
+    lineNumbersInTable = false
+    tabWidth = 4
+
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 4
+    ordered = true
+
+[sitemap]
+  changefreq = "weekly"
+  priority = 0.5
+  filename = "sitemap.xml"
+
+[languages.zh]
+  locale = "zh-CN"
+  title = "芯片知识库"
+  weight = 1
+
+[params]
+  author = "芯片知识库"
+  description = "数字芯片设计与验证知识库：协议、IP、验证方法学与实现"
+  mainSections = ["posts"]
+  rssFullContent = true
+  favicon = "img/favicon.png"
+
+  [params.footer]
+    since = 2026
+    customText = ""
+
+  [params.sidebar]
+    compact = false
+    subtitle = "总线、IP、验证与实现"
+    avatar = "img/avatar.png"
+
+  [params.article]
+    headingAnchor = true
+    math = false
+    toc = true
+    readingTime = true
+
+    [params.article.list]
+      showTags = true
+
+    [params.article.license]
+      enabled = true
+      default = "CC BY-NC-SA 4.0"
+
+    [params.article.mermaid]
+      look = "classic"
+      lightTheme = "default"
+      darkTheme = "dark"
+      securityLevel = "strict"
+      htmlLabels = true
+
+  [params.widgets]
+    homepage = [
+      { type = "search" },
+      { type = "archives", params = { limit = 5 } },
+      { type = "categories", params = { limit = 10 } },
+      { type = "taxonomy", params = { taxonomy = "series", title = "系列", limit = 10, icon = "categories" } },
+      { type = "tag-cloud", params = { limit = 20 } }
+    ]
+    page = [{ type = "toc" }]
+
+  [params.colorScheme]
+    toggle = true
+    default = "auto"
+
+  [params.comments]
+    # 完成 giscus 配置（repo/repoID/categoryID）后改为 true
+    enabled = false
+    provider = "giscus"
+
+    [params.comments.giscus]
+      repo = "YOUR_GITHUB/knowledge-comments"
+      repoID = "R_xxxxxxxx"
+      category = "Announcements"
+      categoryID = "DIC_xxxxxxxx"
+      mapping = "pathname"
+      strict = 1
+      reactionsEnabled = 1
+      emitMetadata = 0
+      inputPosition = "top"
+      lightTheme = "light"
+      darkTheme = "dark_dimmed"
+      lang = "zh-CN"
+      loading = "lazy"
+
+  [params.opengraph.twitter]
+    site = ""
+    card = "summary_large_image"
+
+  [params.imageProcessing]
+    autoOrient = true
+
+    [params.imageProcessing.external]
+      timeout = "5s"
+
+    [params.imageProcessing.content]
+      enabled = true
+      widths = [800, 1600]
+
+    [params.imageProcessing.thumbnail]
+      enabled = true

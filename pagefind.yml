@@ -1,0 +1,14 @@
+site: public
+output_subdir: pagefind
+force_language: zh
+keep_index_url: false
+# 只索引带 data-pagefind-body 的文章正文，跳过首页、列表页和搜索页
+root_selector: "[data-pagefind-body]"
+
+exclude_selectors:
+  - ".article-toc"
+  - ".article-footer"
+  - ".article-series"
+  - "#comments"
+  - "pre.mermaid"
+  - ".wavedrom-render"
