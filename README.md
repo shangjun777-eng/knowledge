@@ -11,7 +11,7 @@
 - [giscus](https://giscus.app/) 评论（GitHub Discussions，零后端）
 - [Mermaid](https://mermaid.js.org/) 框图 / 状态机、[WaveDrom](https://wavedrom.com/) 数字时序图
 - [KaTeX](https://katex.org/) 数学公式
-- Cloudflare Pages 自动构建部署
+- GitHub Pages 自动构建部署（Cloudflare Pages 可选）
 
 ## 本地开发
 
