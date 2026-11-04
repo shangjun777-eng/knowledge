@@ -351,43 +351,218 @@ sequenceDiagram
 3. **发给谁/读哪里**：Address 或目标 ID
 </details>
 
-## 分层再展开：每一层到底做什么
+## 分层再展开：三层各自解决什么问题
 
-| 层 | 一句话职责 | 快递类比 |
-| --- | --- | --- |
-| Transaction Layer | 组装/解析 TLP，决定路由、Tag、流控 | 决定寄什么、寄给谁 |
-| Data Link Layer | 序列号、LCRC、ACK/NAK、重传 | 快递单号、丢件重发 |
-| Physical Layer | 编码、SerDes、LTSSM | 公路、车道、信号 |
+### 为什么 PCIe 要分层
+
+PCIe 把一次访问拆成三层，不是为了“把简单问题复杂化”，而是为了解耦：
+
+- **Transaction Layer** 关心“寄什么、寄给谁”：事务类型、地址、Tag、Completion。
+- **Data Link Layer** 关心“这一段链路别丢件”：序列号、CRC、ACK/NAK、重传。
+- **Physical Layer** 关心“怎么把 0/1 变成信号”：编码、SerDes、链路训练。
+
+类比一下：
+
+- 你写好包裹、填好面单（Transaction）；
+- 快递站贴单号、录系统、丢件重发（Data Link）；
+- 卡车在公路上运输（Physical）。
+
+分层的好处是：
+
+- 不同速率/编码的 PHY 可以配同一套事务层；
+- 某一层出问题，可以只盯那一层；
+- 规范可以独立演进，例如 Gen3 换编码，不影响 TLP 语义。
+
+> 记住：**上层不关心下层怎么传，下层不关心上层传的是什么。** 每层只加自己该加的“信封”。
+
+### 数据在每一层长什么样
+
+发送方向：
+
+```mermaid
+flowchart TB
+  SW["软件 / 驱动"] --> TL["Transaction Layer"]
+  TL --> DL["Data Link Layer"]
+  DL --> PL["Physical Layer"]
+  PL --> LINK["Link"]
+  TL -.-> TLP["TLP：Header + Data + ECRC"]
+  DL -.-> FRAME["DLL 帧：Seq + TLP + LCRC"]
+  PL -.-> SYM["物理层：Framing + 编码 + SerDes"]
+```
+
+- 到了 Transaction Layer：是一个 **TLP**。
+- 到了 Data Link Layer：TLP 外面加上 **序列号 + LCRC**，变成 DLL 帧；同时可能插入 DLLP。
+- 到了 Physical Layer：帧被切分/编码/加扰，变成 Lane 上的符号和电信号。
+- 接收方向反过来：PHY 解码 → DLL 校验序列号/LCRC、回 ACK → TL 解析 TLP、匹配 Completion。
+
+> 这也解释了为什么调试时要“分层看”：PHY 出错看眼图/LTSSM，DLL 出错看 LCRC/重传，TL 出错看 TLP/Tag。
+
+### 一次读请求穿过三层
+
+把前面“一次 MMIO 读”换成层视角：
+
+```mermaid
+sequenceDiagram
+  participant SW as 软件/驱动
+  participant TL as Transaction
+  participant DL as Data Link
+  participant PHY as Physical
+  participant LINK as 对端
+  SW->>TL: 读地址
+  TL->>DL: MRd TLP
+  DL->>PHY: Seq + TLP + LCRC
+  PHY->>LINK: 编码后的符号
+  LINK-->>PHY: CplD 符号
+  PHY-->>DL: 解码后的帧
+  DL-->>TL: 校验通过，回 ACK，上交 TLP
+  TL-->>SW: 匹配 Tag，返回数据
+```
+
+对端处理请求时，方向相反：PHY 收符号 → DLL 校验/ACK → TL 解析 MRd → 读寄存器 → 反向组装 CplD。
 
 ### Transaction Layer：事务层
 
-负责：
+**一句话：决定“寄什么、寄给谁、怎么匹配回执”。**
+
+**数据单元**：TLP（Header + 可选 Data + 可选 ECRC）。
+
+**主要职责**
 
 - 把软件/设备的访问转换成 TLP。
-- 解析 TLP 头，决定路由方式（地址路由、ID 路由、消息路由）。
+- 解析 TLP 头，决定路由方式：地址路由、ID 路由、消息路由。
 - 管理 **Tag** 和 **Outstanding（同一时间未完成的请求）**，把 Completion 匹配回原始请求。
-- 维护 **流控信用（Flow Control Credit）**。
+- 维护 **流控信用（P/NP/Cpl，Header/Data）**。
+- 实现 posted/non-posted 语义和排序规则。
+- 提供配置空间访问（Config Read/Write）。
+
+**关键字段**
+
+| 字段 | 作用 |
+| --- | --- |
+| Fmt/Type | 头长度 + 事务类型 |
+| Length | 数据长度（DW） |
+| Requester ID | 请求方 BDF |
+| Tag | 匹配 Completion |
+| Address/ID | 目标地址或目标 ID |
+| TC/Attr | 流量类别/属性 |
+| Byte Enables | 有效字节 |
+
+**本层典型错误**
+
+- Unsupported Request（UR）：目标不支持这个请求。
+- Completer Abort（CA）：目标处理失败。
+- Completion Timeout：等不到 Completion。
+- Malformed TLP：头/长度/字段不合法。
+- Poisoned TLP：数据被标记为不可信。
+
+**设计与验证关注**
+
+- Tag 表/Outstanding 容量：支持多少个并发请求？
+- 流控信用计数：不能溢出/下溢。
+- 排序规则：Posted/Non-Posted/Completion 的顺序。
+- 4 KB 边界、MPS/MRRS、Completion 匹配。
+- Config 空间和 BAR 的实现。
+
+> 初学者先记住：**读是 non-posted，写是 posted；Completion 靠 Requester ID + Tag 匹配，不是靠地址。**
 
 ### Data Link Layer：数据链路层
 
-负责链路级的可靠传输：
+**一句话：保证“这一段链路”可靠传输。**
+
+**数据单元**
+
+- **DLL 帧**：`序列号 + TLP + LCRC`。
+- **DLLP**：ACK/NAK、InitFC/UpdateFC、电源管理、厂商自定义。
+
+**主要职责**
 
 - 给 TLP 加序列号和 LCRC。
-- 用 ACK/NAK DLLP 确认或请求重传。
-- 维护重传缓冲区（Replay Buffer）。
-- 处理流控信用更新（InitFC/UpdateFC）和电源管理 DLLP。
+- 用 ACK/NAK 确认或请求重传。
+- 维护重传缓冲区（Replay Buffer），超时重发。
+- 丢弃重复 TLP，处理序列号回绕。
+- 处理流控信用更新和电源管理 DLLP。
 
-**DLLP 只在链路两端有效，不会被 Switch 转发。**
+**关键特性**
+
+- **DLLP 只在链路两端有效，不会被 Switch 转发。**
+- 只保证**这一段链路**可靠，不保证端到端。
+- 流控（Transaction Layer）防溢出，DLL 负责丢包重传，两者分工不同。
+
+**本层典型错误**
+
+- LCRC 错误。
+- 序列号错误/重复 TLP。
+- Replay Timer 超时。
+- ACK/NAK 丢失导致重传。
+
+**设计与验证关注**
+
+- Replay Buffer 深度和重传策略。
+- ACK/NAK 状态机和定时器。
+- 序列号回绕、重复包丢弃。
+- LCRC 错误注入、重传恢复。
+- 流控 DLLP 的解析/生成。
+
+> 初学者先记住：**DLL 是“链路段的可靠传输层”，不是端到端；DLLP 不会被转发。**
 
 ### Physical Layer：物理层
 
-负责：
+**一句话：把 0/1 变成能在 Lane 上传输的信号，并负责链路训练。**
 
-- **逻辑子层**：编码/解码、加扰、链路训练。
-- **电气子层**：SerDes、差分发送/接收、时钟恢复、均衡。
-- **LTSSM**：链路训练和状态管理状态机。
+**两个子层**
 
-对 SoC 设计者来说，Physical Layer 通常以 **PIPE 接口**的形式与 MAC/控制器对接，是集成时最需要关注的边界。
+- **逻辑子层**：framing（加帧头/帧尾，帮助接收方找到边界）、加扰（scrambling，让数据随机化，便于时钟恢复）、编码（8b/10b、128b/130b）、LTSSM、Lane 反转/极性反转、均衡。
+- **电气子层**：SerDes（串行器/解串器）、差分发送/接收、时钟恢复、去加重、均衡。
+
+**主要职责**
+
+- 把 DLL 帧编码成符号，通过 Lane 发送；接收方向解码。
+- 维护 LTSSM，训练链路到 L0。
+- 协商速率、Lane 数量、Lane 反转/极性。
+- Gen3+ 做均衡（Equalization）。
+- 处理低功耗状态（L0s/L1/L2）和复位。
+
+**关键接口**
+
+- **PIPE**：MAC/控制器与 PHY 的接口。
+- **REFCLK**：参考时钟（常见 100 MHz，可能带 SSC）。
+- **PERST# / Hot Reset / FLR**：不同层级的复位。
+
+**本层典型错误**
+
+- Link Down、训练失败。
+- Lane 反转/极性错误。
+- 速率/宽度协商失败。
+- 均衡失败、误码率高。
+- 参考时钟/复位问题。
+
+**设计与验证关注**
+
+- PIPE 版本、位宽、时钟频率。
+- LTSSM 全状态覆盖、所有速率/宽度组合。
+- Lane 反转/极性、Recovery、低功耗。
+- SerDes/PHY 的电气合规性（眼图、抖动）。
+- 参考时钟、复位时序、CDC。
+
+> 初学者先记住：**L0 之前不能传 TLP；链路训练是 Physical Layer 的事，不是 Transaction Layer。**
+
+### 三层对照表
+
+| 层 | 数据单元 | 核心机制 | 典型错误 | 调试看什么 |
+| --- | --- | --- | --- | --- |
+| Transaction | TLP | 路由、Tag、流控、排序 | UR/CA/Timeout/Malformed | TLP trace、Tag 表、Credit |
+| Data Link | DLL 帧/DLLP | Seq、LCRC、ACK/NAK、Replay | LCRC/Seq/Replay timeout | 重传计数、ACK/NAK、LCRC |
+| Physical | 符号/电信号 | 编码、LTSSM、SerDes | Link Down/训练失败/误码 | LTSSM、眼图、均衡、PIPE |
+
+### 常见误解
+
+- **“DLLP 会被 Switch 转发”**：不会，DLLP 是链路本地的。
+- **“链路训练是 Transaction Layer 的事”**：不是，LTSSM 在 Physical Layer。
+- **“流控保证不丢包”**：流控只防接收缓冲区溢出；丢包重传由 DLL 负责。
+- **“Completion 按地址匹配”**：不是，按 Requester ID + Tag 匹配。
+- **“Config Write 是 posted”**：不是，Config Write 是 non-posted。
+- **“Memory 请求可以跨 4 KB”**：不可以，跨边界要拆分。
+- **“Gen3 还是 8b/10b”**：不是，Gen3+ 用 128b/130b。
 
 ### PIPE：MAC 和 PHY 之间的接口
 
